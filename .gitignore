@@ -2,4 +2,7 @@
 *~
 *.bak
 /.idea
+*.iml
+*.ipr
+*.iws
 \#*\#

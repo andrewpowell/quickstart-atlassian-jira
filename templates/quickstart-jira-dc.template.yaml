@@ -74,6 +74,10 @@ Metadata:
           - TomcatProtocol
           - TomcatRedirectPort
           - TomcatScheme
+      - Label:
+          default: Backup Configuration
+          Parameters:
+            - BackupsEnabled
 
     ParameterLabels:
       CatalinaOpts:
@@ -174,6 +178,8 @@ Metadata:
         default: Tomcat Redirect Port
       TomcatScheme:
         default: Tomcat protocol Scheme
+      BackupsEnabled:
+        default: Enable backups
 
 Parameters:
   CatalinaOpts:
@@ -565,10 +571,20 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
     Type: String
+  BackupsEnabled:
+    AllowedValues:
+      - true
+      - false
+    ConstraintDescription: Must be 'true' or 'false'.
+    Default: true
+    Description: Enable mail processing and sending
+    Type: String
 
 Conditions:
   DisableMail:
     !Not [!Equals [!Ref MailEnabled, true]]
+  EnableBackups:
+    !Equals [!Ref BackupsEnabled, true]
   DoSSL:
     !Not [!Equals [!Ref SSLCertificateARN, '']]
   KeyProvided:
@@ -1303,6 +1319,15 @@ Resources:
     Properties:
       AliasName: !Sub "alias/${AWS::StackName}"
       TargetKeyId: !Ref EncryptionKey
+  Backups:
+    Type: AWS::CloudFormation::Stack
+    Condition: EnableBackups
+    Properties:
+      TemplateURL: !Sub
+        - https://${QSS3BucketName}.${QSS3Region}.amazonaws.com/${QSS3KeyPrefix}submodules/quickstart-atlassian-services/templates/quickstart-backup-for-atlassian-services.yaml
+        - QSS3Region: !If ["GovCloudCondition", "s3-us-gov-west-1", "s3"]
+      Parameters:
+
 Outputs:
   ServiceURL:
     Description: The URL to access this Atlassian service
